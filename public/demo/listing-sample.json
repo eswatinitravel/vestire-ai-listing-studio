@@ -1,0 +1,21 @@
+{
+  "title": "Light Sky-Blue Button-Down Oxford Shirt – Long Sleeve",
+  "category": "men",
+  "product_type": "Shirts",
+  "colours": ["Sky Blue"],
+  "style_tags": ["smart casual", "button-down collar", "chest pocket", "office wear", "regular fit look"],
+  "material_guess": "looks like a cotton-blend oxford weave",
+  "description_en": "A clean light sky-blue button-down shirt with a single chest pocket and full sleeves. The fabric looks like a soft oxford weave, so it works for office days, university and evening plans. Pair it with navy chinos or dark jeans.",
+  "description_roman_urdu": "Yeh halki aasmani neeli button-down shirt hai, ek chest pocket aur poori aasteenon ke saath. Kapra oxford weave jaisa lagta hai — office, university aur shaam ki mehfil, har jagah ke liye behtareen. Navy chinos ya dark jeans ke saath pehnein.",
+  "social_caption": "Sky-blue vibes for every day 💙 Office ho ya chai pe dosti — yeh button-down shirt har look ko smart bana deti hai. Order ke liye DM karein! ✨",
+  "hashtags": ["#MensFashionPakistan", "#PakistaniFashion", "#OxfordShirt", "#ButtonDownShirt", "#SmartCasual", "#LahoreFashion", "#KarachiStyle", "#OfficeWear", "#MensShirts", "#ShopLocalPK"],
+  "whatsapp_text": "Assalam o Alaikum! 👋 New arrival: Light sky-blue button-down shirt (long sleeve, chest pocket). Sizes: S, M, L, XL. Price: Rs ____ . Cash on delivery available. Order ke liye apna size aur address bhej dein.",
+  "size_chart": {
+    "unit": "inches (suggested — measure your own stock)",
+    "columns": ["Size", "Chest", "Length", "Shoulder"],
+    "rows": [["S", "38", "28", "17"], ["M", "40", "29", "17.5"], ["L", "42", "30", "18"], ["XL", "44", "31", "18.5"]]
+  },
+  "seo_title": "Sky Blue Button-Down Oxford Shirt for Men | Pakistan",
+  "seo_description": "Light sky-blue long-sleeve button-down shirt with chest pocket. Smart casual for office and evenings. Sizes S–XL, cash on delivery across Pakistan.",
+  "price_suggestion_pkr": { "min": 2200, "max": 3200, "note": "Suggestion only, based on similar shirts from small Pakistani shops. Set your own price." }
+}

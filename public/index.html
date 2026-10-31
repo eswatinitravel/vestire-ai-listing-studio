@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vestire AI Listing Studio — one photo, full listing</title>
+<meta name="description" content="Pakistani clothing sellers: take one photo of a garment and get a cut-out, studio and lifestyle shots, captions in English and Roman Urdu, a size chart and a Vestire import file. Powered by Meta SAM 3.1, Muse Spark and Muse Image.">
+<meta name="theme-color" content="#061a2e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23083b52'/%3E%3Cpath d='M18 18l14 30 14-30' fill='none' stroke='%232dd4bf' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
+<header class="top">
+  <div class="brand"><span class="logo">V</span><div><b>Vestire</b><small>AI Listing Studio</small></div></div>
+  <div class="top-r">
+    <span id="modeBadge" class="badge">…</span>
+    <button id="settingsBtn" class="icon-btn" aria-label="Settings" title="Settings">⚙︎</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Ek photo. Poori listing.<span>One photo → a ready-to-sell listing.</span></h1>
+    <p>Cut-out, studio &amp; lifestyle shots, captions in English and Roman Urdu, size chart, price suggestion and a Vestire import file — in about a minute.</p>
+    <div id="demoNote" class="note hidden">
+      <b>Demo mode</b> — the Meta key isn't connected on this deployment yet, so the app replays a <u>saved sample</u> through the real pipeline code (the SAM mask is decoded and cut out live in your browser; text and extra shots are pre-recorded illustrative samples).
+    </div>
+  </section>
+
+  <section class="card" id="stepPhoto">
+    <h2><em>1</em> Photo lagayein <small>Add a garment photo</small></h2>
+    <div class="drop" id="drop">
+      <img id="preview" alt="" class="hidden">
+      <div id="dropEmpty" class="drop-empty">
+        <div class="drop-ico">👕</div>
+        <p>Shirt, polo, trouser ya jacket ki photo<br><small>Any background is fine — SAM 3.1 finds the garment</small></p>
+      </div>
+    </div>
+    <div class="row wrap">
+      <label class="btn ghost"><input type="file" accept="image/*" capture="environment" id="camInput" hidden>📷 Camera</label>
+      <label class="btn ghost"><input type="file" accept="image/*" id="fileInput" hidden>🖼️ Gallery</label>
+      <button class="btn ghost" id="sampleBtn">✨ Sample photo</button>
+    </div>
+    <div class="field">
+      <span class="lbl">Kya hai? · Garment (SAM prompt)</span>
+      <div class="chips" id="chips">
+        <button data-p="shirt" class="chip on">Shirt</button><button data-p="polo shirt" class="chip">Polo</button>
+        <button data-p="t-shirt" class="chip">T-shirt</button><button data-p="trousers" class="chip">Trousers</button>
+        <button data-p="jeans" class="chip">Jeans</button><button data-p="jacket" class="chip">Jacket</button>
+      </div>
+      <input id="promptInput" class="inp" value="shirt" maxlength="30" aria-label="Garment noun for SAM">
+    </div>
+    <div class="field">
+      <span class="lbl">Note (optional) · e.g. “stock M, L · price around 2500”</span>
+      <input id="hintInput" class="inp" maxlength="200" placeholder="Seller note for Muse Spark">
+    </div>
+    <button class="btn primary big" id="goBtn">✨ Listing banayein · Generate</button>
+  </section>
+
+  <section class="card" id="pipeCard">
+    <h2><em>2</em> Pipeline <small>Powered by Meta: SAM 3.1 · Muse Spark · Muse Image</small></h2>
+    <ol class="pipe" id="pipe"></ol>
+    <div class="arch" aria-label="Architecture">
+      <span>📱 Browser</span><i>→</i><span>☁️ Cloudflare Pages Function<br><small>key stays server-side</small></span><i>→</i><span>Ⓜ api.meta.ai/v1</span>
+    </div>
+    <p class="tot" id="totalTime"></p>
+  </section>
+
+  <section class="card hidden" id="review">
+    <h2><em>3</em> Review &amp; edit <small>Sab kuch badal sakte hain · everything is editable</small></h2>
+    <div class="gallery" id="gallery"></div>
+    <div class="row wrap variant">
+      <input id="colourInput" class="inp" value="navy blue" maxlength="30" aria-label="Variant colour">
+      <button class="btn ghost" id="variantBtn">🎨 Rang badlein · Colour variant</button>
+    </div>
+    <div id="warnings" class="warn hidden"></div>
+
+    <div class="grid2">
+      <div class="field"><span class="lbl">Title</span><div class="cp"><input class="inp" data-f="title"><button class="copy" data-copy="title">Copy</button></div></div>
+      <div class="field two">
+        <label><span class="lbl">Type</span><select class="inp" data-f="product_type"></select></label>
+        <label><span class="lbl">Category</span><select class="inp" data-f="category"><option value="men">Men</option><option value="women">Women</option><option value="kids">Juniors</option></select></label>
+      </div>
+      <div class="field"><span class="lbl">Colours · Rang</span><input class="inp" data-f="colours" data-list="1"></div>
+      <div class="field"><span class="lbl">Style tags</span><input class="inp" data-f="style_tags" data-list="1"></div>
+      <div class="field full"><span class="lbl">Material (AI guess — verify)</span><input class="inp" data-f="material_guess"></div>
+      <div class="field full"><span class="lbl">Description (English)</span><div class="cp"><textarea class="inp" rows="3" data-f="description_en"></textarea><button class="copy" data-copy="description_en">Copy</button></div></div>
+      <div class="field full"><span class="lbl">Tafseel (Roman Urdu)</span><div class="cp"><textarea class="inp" rows="3" data-f="description_roman_urdu"></textarea><button class="copy" data-copy="description_roman_urdu">Copy</button></div></div>
+      <div class="field full"><span class="lbl">Instagram / Facebook caption</span><div class="cp"><textarea class="inp" rows="3" data-f="social_caption"></textarea><button class="copy" data-copy="social">Copy</button></div></div>
+      <div class="field full"><span class="lbl">Hashtags</span><input class="inp" data-f="hashtags" data-list="space"></div>
+      <div class="field full"><span class="lbl">WhatsApp message</span><div class="cp"><textarea class="inp" rows="3" data-f="whatsapp_text"></textarea><button class="copy" data-copy="whatsapp_text">Copy</button></div></div>
+      <div class="field full"><span class="lbl">Size chart <small id="sizeUnit"></small></span><textarea class="inp mono" rows="5" id="sizeChart"></textarea><small class="hint">One row per line, comma-separated. First line = columns.</small></div>
+      <div class="field"><span class="lbl">SEO title</span><input class="inp" data-f="seo_title" maxlength="60"></div>
+      <div class="field"><span class="lbl">SEO description</span><input class="inp" data-f="seo_description" maxlength="155"></div>
+    </div>
+
+    <div class="price">
+      <div><span class="lbl">AI price suggestion (PKR)</span><b id="priceSug">—</b><small id="priceNote"></small></div>
+      <label><span class="lbl">Aap ki qeemat · Your price (Rs)</span><input class="inp" id="priceInput" inputmode="numeric" placeholder="e.g. 2499"></label>
+      <label><span class="lbl">SKU (optional)</span><input class="inp" id="skuInput" maxlength="40" placeholder="VC-S001"></label>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="zipBtn">⬇️ Download listing pack (ZIP)</button>
+      <button class="btn ghost" id="csvBtn">📄 Vestire CSV</button>
+      <button class="btn ghost" id="waBtn">💬 WhatsApp</button>
+      <button class="btn ghost" id="copyAllBtn">📋 Copy all</button>
+      <button class="btn ghost hidden" id="sendBtn">🛍️ Send to Vestire (hidden draft)</button>
+    </div>
+    <p class="fine">AI text, size chart and price are <b>suggestions</b>. Check fabric, sizes and price before you publish. No brand or authenticity claims are made.</p>
+  </section>
+</main>
+
+<footer>
+  <p><b>Powered by Meta:</b> SAM 3.1 · Muse Spark · Muse Image</p>
+  <p>Built for small Pakistani clothing sellers · Vestire Collection · Meta Global AI Developer Hackathon (Indie)</p>
+</footer>
+
+<dialog id="settings">
+  <form method="dialog" class="dlg">
+    <h3>Settings</h3>
+    <label class="switch"><input type="checkbox" id="sendToggle"> <span>Enable “Send to Vestire” (off by default)</span></label>
+    <p class="fine">Creates the product as a <b>hidden draft</b> in your Vestire admin (you switch it on later). Password is used once per send and is not stored.</p>
+    <label><span class="lbl">Store URL</span><input class="inp" id="storeUrl" placeholder="https://your-store.pages.dev"></label>
+    <label><span class="lbl">Staff username</span><input class="inp" id="storeUser" autocomplete="username"></label>
+    <label><span class="lbl">Staff password</span><input class="inp" id="storePass" type="password" autocomplete="current-password"></label>
+    <div class="row end"><button class="btn primary" value="ok">Save</button></div>
+  </form>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
