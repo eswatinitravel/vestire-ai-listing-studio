@@ -3,24 +3,37 @@ import { parseSamText, pickBestMask, buildAlpha, alphaBBox, samPrompt } from "./
 import { normalizeListing, findRiskyClaims, PRODUCT_TYPES } from "./lib/listing.js";
 import { vestireCSV } from "./lib/csv.js";
 import { buildListingPack, captionsText } from "./lib/pack.js";
+import { colourToRGB, recolourPixels, composeOn, canvas as mkCanvas } from "./lib/compose.js";
+import { segmentPoint, loadSam } from "./lib/segment-browser.js";
 
 const $ = (s) => document.querySelector(s);
-const S = { live: false, models: {}, photo: null, photoIsSample: false, prompt: "shirt", listing: null, shots: [], cutoutWhite: null, busy: false };
+const S = { live: false, provider: "demo", point: null, cutCanvas: null, models: {}, photo: null, photoIsSample: false, prompt: "shirt", listing: null, shots: [], cutoutWhite: null, busy: false };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function toast(msg, ms = 2600) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), ms); }
 
 // ---------- pipeline view ----------
-const STEPS = [
-  { id: "sam", ico: "✂️", name: "SAM 3.1 · segment garment", sub: () => `Prompt “${S.prompt}” → box + mask` },
-  { id: "cut", ico: "🧩", name: "Cut-out · mask applied in browser", sub: () => "@meta-sam/parser decodes the mask → canvas" },
-  { id: "spark", ico: "🧠", name: "Muse Spark 1.3 · listing JSON", sub: () => "Vision + structured output (EN + Roman Urdu)" },
-  { id: "studio", ico: "📸", name: "Muse Image 1.0 · studio shot", sub: () => "White background, ghost mannequin" },
-  { id: "life", ico: "🌆", name: "Muse Image 1.0 · lifestyle shot", sub: () => "Model-style shot, Lahore setting" },
-];
+const STEP_SETS = {
+  "workers-ai": [
+    { id: "sam", ico: "✂️", name: "SlimSAM · Meta Segment Anything (open weights)", sub: () => "Runs in your browser · tap point → mask" },
+    { id: "cut", ico: "🧩", name: "Cut-out · mask applied on canvas", sub: () => "Transparent PNG + white square" },
+    { id: "spark", ico: "🧠", name: "Meta Llama 4 Scout 17B (open weights)", sub: () => "Vision → listing JSON · Cloudflare Workers AI" },
+    { id: "studio", ico: "📸", name: "Studio shot · canvas composition", sub: () => "Your real garment on white + soft shadow" },
+    { id: "life", ico: "🪵", name: "Flat-lay scene · FLUX.1 schnell background", sub: () => "Workers AI makes an empty scene; your garment is placed on it" },
+  ],
+  "meta-api": [
+    { id: "sam", ico: "✂️", name: "SAM 3.1 · segment garment", sub: () => `Prompt “${S.prompt}” → box + mask` },
+    { id: "cut", ico: "🧩", name: "Cut-out · mask applied in browser", sub: () => "@meta-sam/parser decodes the mask → canvas" },
+    { id: "spark", ico: "🧠", name: "Muse Spark 1.3 · listing JSON", sub: () => "Vision + structured output (EN + Roman Urdu)" },
+    { id: "studio", ico: "📸", name: "Muse Image 1.0 · studio shot", sub: () => "White background, ghost mannequin" },
+    { id: "life", ico: "🌆", name: "Muse Image 1.0 · lifestyle shot", sub: () => "Model-style shot, Lahore setting" },
+  ],
+};
+STEP_SETS.demo = STEP_SETS["workers-ai"].map((x) => ({ ...x }));
+const steps = () => STEP_SETS[S.provider] || STEP_SETS.demo;
 function drawPipe() {
   $("#pipe").innerHTML = "";
-  for (const s of STEPS) {
+  for (const s of steps()) {
     const li = document.createElement("li"); li.id = "p-" + s.id;
     li.innerHTML = `<span class="ix"></span><div><b></b><small></small></div><span class="st">waiting</span>`;
     li.querySelector(".ix").textContent = s.ico; li.querySelector("b").textContent = s.name; li.querySelector("small").textContent = s.sub();
@@ -54,27 +67,31 @@ async function downscale(src, max = 1024, type = "image/jpeg", q = 0.86) {
   c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL(type, q);
 }
-/** Applies a SAM mask to the photo: transparent PNG cut-out + square JPEG on white. */
+/** Applies a full-size alpha map (0/255) to the photo → transparent PNG cut-out, white square JPEG, and the cut canvas. */
+async function cutoutFromAlpha(photoUrl, alpha, W, H) {
+  const img = await loadImage(photoUrl);
+  const mc = mkCanvas(W, H); const md = mc.getContext("2d").createImageData(W, H);
+  for (let i = 0; i < alpha.length; i++) md.data[i * 4 + 3] = alpha[i];
+  mc.getContext("2d").putImageData(md, 0, 0);
+  const c = mkCanvas(W, H), g = c.getContext("2d");
+  g.drawImage(img, 0, 0, W, H); g.globalCompositeOperation = "destination-in"; g.filter = "blur(0.7px)"; g.drawImage(mc, 0, 0); g.filter = "none";
+  const bb = alphaBBox(alpha, W, H, Math.round(Math.max(W, H) * 0.02)) || { x: 0, y: 0, w: W, h: H };
+  const crop = mkCanvas(bb.w, bb.h); crop.getContext("2d").drawImage(c, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
+  const side = Math.round(Math.max(bb.w, bb.h) * 1.12);
+  const sq = mkCanvas(side, side), sg = sq.getContext("2d");
+  sg.fillStyle = "#fff"; sg.fillRect(0, 0, side, side); sg.drawImage(crop, (side - bb.w) / 2, (side - bb.h) / 2);
+  let on = 0; for (let i = 0; i < alpha.length; i++) if (alpha[i]) on++;
+  return { png: crop.toDataURL("image/png"), white: sq.toDataURL("image/jpeg", 0.9), cut: crop, coverage: on / alpha.length };
+}
+/** SAM 3.1 wire text (Meta API or saved sample) → cut-out. */
 async function makeCutout(photoUrl, samText) {
   const parsed = await parseSamText(samText);
   const best = pickBestMask(parsed.masks);
   if (!best) return { empty: true, parsed };
   const img = await loadImage(photoUrl);
   const W = img.naturalWidth, H = img.naturalHeight;
-  const alpha = buildAlpha(best, parsed.frame, W, H);
-  const mc = document.createElement("canvas"); mc.width = W; mc.height = H;
-  const md = mc.getContext("2d").createImageData(W, H);
-  for (let i = 0; i < alpha.length; i++) { md.data[i * 4 + 3] = alpha[i]; }
-  mc.getContext("2d").putImageData(md, 0, 0);
-  const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
-  g.drawImage(img, 0, 0); g.globalCompositeOperation = "destination-in"; g.filter = "blur(0.7px)"; g.drawImage(mc, 0, 0); g.filter = "none";
-  const bb = alphaBBox(alpha, W, H, Math.round(Math.max(W, H) * 0.02)) || { x: 0, y: 0, w: W, h: H };
-  const crop = document.createElement("canvas"); crop.width = bb.w; crop.height = bb.h;
-  crop.getContext("2d").drawImage(c, bb.x, bb.y, bb.w, bb.h, 0, 0, bb.w, bb.h);
-  const side = Math.round(Math.max(bb.w, bb.h) * 1.12);
-  const sq = document.createElement("canvas"); sq.width = side; sq.height = side; const sg = sq.getContext("2d");
-  sg.fillStyle = "#fff"; sg.fillRect(0, 0, side, side); sg.drawImage(crop, (side - bb.w) / 2, (side - bb.h) / 2);
-  return { empty: false, parsed, best, png: crop.toDataURL("image/png"), white: sq.toDataURL("image/jpeg", 0.9), objects: parsed.masks.length };
+  const out = await cutoutFromAlpha(photoUrl, buildAlpha(best, parsed.frame, W, H), W, H);
+  return { empty: false, parsed, best, objects: parsed.masks.length, ...out };
 }
 const dataUrlBytes = (d) => { const b = atob(d.split(",")[1]); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
 async function urlToDataUrl(url) { const r = await fetch(url); const b = await r.blob(); return new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); }); }
@@ -158,72 +175,105 @@ function waText() { const p = price(); return S.listing.whatsapp_text.replace(/R
 function copyText(t) { navigator.clipboard?.writeText(t).then(() => toast("Copy ho gaya ✓ Copied"), () => toast("Copy failed — select and copy manually")); }
 
 // ---------- the run ----------
+const jpg = (c, q = 0.88) => c.toDataURL("image/jpeg", q);
+async function segmentStep() {
+  stepState("sam", "running");
+  if (S.provider === "meta-api" || S.provider === "demo") {
+    const text = S.provider === "meta-api" ? (await api("/api/segment", { image: S.photo, prompt: S.prompt })).text
+      : (await sleep(900), await (await fetch("/demo/sam-sample.txt")).text());
+    stepState("cut", "running");
+    const cut = await makeCutout(S.photo, text);
+    if (cut.empty) { stepState("sam", "done", "0 matches"); stepState("cut", "skip", "no garment found — try another word"); return null; }
+    stepState("sam", "done", S.provider === "demo" ? "saved mask" : `${cut.objects} object${cut.objects > 1 ? "s" : ""}`);
+    stepState("cut", "done"); return cut;
+  }
+  // workers-ai: SlimSAM in the browser, point prompt (tap) or image centre.
+  const img = await loadImage(S.photo); const W = img.naturalWidth, H = img.naturalHeight;
+  const pt = S.point || { x: Math.round(W / 2), y: Math.round(H / 2) };
+  const sub = $("#p-sam small");
+  const r = await segmentPoint(S.photo, pt, (m) => { sub.textContent = "Runs in your browser · " + m; });
+  stepState("sam", "done", `IoU ${r.score.toFixed(2)}`);
+  stepState("cut", "running");
+  const cut = await cutoutFromAlpha(S.photo, r.alpha, r.width, r.height);
+  if (cut.coverage < 0.02 || cut.coverage > 0.92) { stepState("cut", "done", "check"); toast("Cut-out theek nahi? Photo par garment ko tap karein, phir dobara · Tap the garment and retry", 5000); }
+  else stepState("cut", "done");
+  return cut;
+}
 async function run() {
   if (S.busy) return;
   if (!S.live && !S.photoIsSample) { await useSample(); toast("Demo mode: using the sample photo"); }
   if (!S.photo) return toast("Pehle photo lagayein · Add a photo first");
   S.busy = true; $("#goBtn").disabled = true; $("#variantBtn").disabled = true;
-  S.prompt = samPrompt($("#promptInput").value); S.shots = []; S.listing = null; S.cutoutWhite = null;
+  S.prompt = samPrompt($("#promptInput").value); S.shots = []; S.listing = null; S.cutoutWhite = null; S.cutCanvas = null;
   drawPipe(); $("#review").classList.add("hidden"); $("#totalTime").textContent = "";
   const T0 = performance.now();
   setShot("orig", "Original", S.photo, "01-original.jpg");
   try {
-    // SAM and Muse Spark run in parallel.
-    const samP = (async () => {
-      stepState("sam", "running");
-      let text;
-      if (S.live) text = (await api("/api/segment", { image: S.photo, prompt: S.prompt })).text;
-      else { await sleep(900); text = await (await fetch("/demo/sam-sample.txt")).text(); }
-      stepState("cut", "running");
-      const cut = await makeCutout(S.photo, text);
-      if (cut.empty) { stepState("sam", "done", "0 matches"); stepState("cut", "skip", "no garment found — try another word"); return null; }
-      stepState("sam", "done", `${cut.objects} object${cut.objects > 1 ? "s" : ""}`);
-      stepState("cut", "done");
-      S.cutoutWhite = cut.white;
+    const segP = segmentStep().then((cut) => {
+      if (!cut) return null;
+      S.cutoutWhite = cut.white; S.cutCanvas = cut.cut;
       setShot("cut", "Cut-out (PNG)", cut.png, "02-cutout.png", { check: true });
       return cut;
-    })().catch((e) => { stepState("sam", "error", e.message.slice(0, 60)); stepState("cut", "skip", "skipped"); return null; });
+    }).catch((e) => { stepState("sam", "error", e.message.slice(0, 60)); stepState("cut", "skip", "skipped"); return null; });
 
     const sparkP = (async () => {
       stepState("spark", "running");
-      let listing;
-      if (S.live) listing = (await api("/api/listing", { image: S.photo, hint: $("#hintInput").value })).listing;
+      let listing, model = "";
+      const hint = [$("#hintInput").value.trim(), `Garment: ${S.prompt}`].filter(Boolean).join(". ");
+      if (S.live) { const d = await api("/api/listing", { image: await downscale(S.photo, 768, "image/jpeg", 0.85), hint }); listing = d.listing; model = d.model || ""; }
       else { await sleep(1700); listing = await (await fetch("/demo/listing-sample.json")).json(); }
-      S.listing = normalizeListing(listing); stepState("spark", "done");
+      S.listing = normalizeListing(listing);
+      stepState("spark", "done", /3\.2/.test(model) ? "fallback 3.2 Vision" : "");
       fillForm(); $("#review").classList.remove("hidden");
     })().catch((e) => { stepState("spark", "error", e.message.slice(0, 60)); });
 
-    await samP;
-    const base = S.cutoutWhite || S.photo;
-    const shot = async (id, kind, key, label, name, demoUrl) => {
-      setShot(key, label, "", name, { loading: true }); stepState(id, "running");
-      try {
-        const src = S.live ? await museImage(kind, base) : (await sleep(kind === "studio" ? 1400 : 2100), await urlToDataUrl(demoUrl));
-        setShot(key, label, src, name); stepState(id, "done");
-      } catch (e) { setShot(key, label, "", name, { error: "failed" }); stepState(id, "error", e.message.slice(0, 60)); }
-    };
+    await segP;
     $("#review").classList.remove("hidden");
-    await Promise.all([sparkP, shot("studio", "studio", "studio", "Studio", "03-studio.jpg", "/demo/demo-studio.jpg"), shot("life", "lifestyle", "life", "Lifestyle", "04-lifestyle.jpg", "/demo/demo-lifestyle.jpg")]);
+    const shot = async (id, key, label, name, make) => {
+      setShot(key, label, "", name, { loading: true }); stepState(id, "running");
+      try { setShot(key, label, await make(), name); stepState(id, "done"); }
+      catch (e) { setShot(key, label, "", name, { error: "failed" }); stepState(id, "error", e.message.slice(0, 60)); }
+    };
+    const base = S.cutoutWhite || S.photo;
+    if (S.provider === "meta-api") {
+      await Promise.all([sparkP, shot("studio", "studio", "Studio", "03-studio.jpg", () => museImage("studio", base)),
+        shot("life", "life", "Lifestyle", "04-lifestyle.jpg", () => museImage("lifestyle", base))]);
+    } else {
+      const need = () => { if (!S.cutCanvas) throw new Error("needs a cut-out"); return S.cutCanvas; };
+      await Promise.all([sparkP,
+        shot("studio", "studio", "Studio", "03-studio.jpg", async () => jpg(composeOn(need(), { bg: "#ffffff", scale: 0.8 }))),
+        shot("life", "scene", "Flat-lay scene", "04-flatlay.jpg", async () => {
+          const cut = need();
+          const bgUrl = S.provider === "workers-ai" ? (await api("/api/scene", { scene: ["marble", "wood", "linen"][Math.floor(Math.random() * 3)] })).image : (await sleep(1200), "/demo/scene-marble.jpg");
+          return jpg(composeOn(cut, { bg: await loadImage(bgUrl), scale: 0.64, shadow: "flatlay" }));
+        })]);
+    }
     $("#totalTime").textContent = `Total ${((performance.now() - T0) / 1000).toFixed(1)}s${S.live ? "" : " (demo replay)"} · ${S.shots.filter((s) => s.src).length} images`;
     if (!S.listing) toast("Listing text failed — try again", 4000);
-    else { $("#review").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    else $("#review").scrollIntoView({ behavior: "smooth", block: "start" });
   } finally { S.busy = false; $("#goBtn").disabled = false; $("#variantBtn").disabled = false; }
 }
 
 async function variant() {
   if (S.busy || !S.shots.length) return toast("Pehle listing banayein · Generate first");
   const colour = $("#colourInput").value.trim() || "navy blue";
-  S.busy = true; $("#variantBtn").disabled = true;
-  const key = "var-" + colour.toLowerCase().replace(/[^a-z]+/g, "-");
+  const key = "var-" + colour.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const name = `05-variant-${key.slice(4)}.jpg`;
+  S.busy = true; $("#variantBtn").disabled = true;
   setShot(key, `Variant: ${colour}`, "", name, { loading: true });
   try {
-    let src;
-    if (S.live) src = await museImage("variant", S.cutoutWhite || S.photo, colour);
-    else { await sleep(1500); src = await urlToDataUrl("/demo/demo-variant-navy.jpg"); if (!/navy/i.test(colour)) toast("Demo has a saved navy sample only — live mode makes any colour", 4000); }
-    setShot(key, S.live ? `Variant: ${colour}` : "Variant: navy (demo)", src, name);
+    let src, label = `Variant: ${colour}`;
+    if (S.provider === "meta-api") src = await museImage("variant", S.cutoutWhite || S.photo, colour);
+    else {
+      const rgb = colourToRGB(colour); if (!rgb) throw new Error("unknown colour — try navy, maroon, olive, black, #1f3a5f");
+      if (!S.cutCanvas) throw new Error("needs a cut-out");
+      const c = mkCanvas(S.cutCanvas.width, S.cutCanvas.height), g = c.getContext("2d"); g.drawImage(S.cutCanvas, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height); recolourPixels(d.data, rgb); g.putImageData(d, 0, 0);
+      src = jpg(composeOn(c, { bg: "#ffffff", scale: 0.8 })); label += " (preview)";
+    }
+    setShot(key, label, src, name);
     if (S.listing && !S.listing.colours.some((c) => c.toLowerCase() === colour.toLowerCase())) { S.listing.colours.push(colour.replace(/\b\w/g, (m) => m.toUpperCase())); fillForm(); }
-  } catch (e) { setShot(key, `Variant: ${colour}`, "", name, { error: e.message.slice(0, 40) }); }
+  } catch (e) { setShot(key, `Variant: ${colour}`, "", name, { error: e.message.slice(0, 60) }); toast(e.message, 4000); }
   finally { S.busy = false; $("#variantBtn").disabled = false; }
 }
 
@@ -259,7 +309,7 @@ async function useSample() {
   S.photo = await urlToDataUrl("/demo/demo-input.jpg"); S.photoIsSample = true; showPreview();
   document.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c.dataset.p === "shirt")); $("#promptInput").value = "shirt";
 }
-function showPreview() { $("#preview").src = S.photo; $("#preview").classList.remove("hidden"); $("#dropEmpty").classList.add("hidden"); }
+function showPreview() { S.point = null; $("#pt")?.classList.add("hidden"); $("#preview").src = S.photo; $("#preview").classList.remove("hidden"); $("#dropEmpty").classList.add("hidden"); }
 async function onFile(file) {
   if (!file || !file.type.startsWith("image/")) return toast("Sirf photo · images only");
   if (!S.live) toast("Demo mode: your photo is shown, but the run replays the sample until the Meta key is connected", 4500);
@@ -268,9 +318,18 @@ async function onFile(file) {
 
 // ---------- boot ----------
 async function boot() {
+  try { const c = await (await fetch("/api/config")).json(); S.live = !!c.live; S.provider = c.provider || (c.live ? "meta-api" : "demo"); S.models = c.models || {}; S.vestireSend = c.vestireSend !== false; } catch { S.live = false; S.provider = "demo"; }
   drawPipe();
-  try { const c = await (await fetch("/api/config")).json(); S.live = !!c.live; S.models = c.models || {}; S.vestireSend = c.vestireSend !== false; } catch { S.live = false; }
-  const b = $("#modeBadge"); b.textContent = S.live ? "LIVE · META" : "DEMO MODE"; b.className = "badge " + (S.live ? "live" : "demo");
+  const b = $("#modeBadge"); b.textContent = S.provider === "meta-api" ? "LIVE · META API" : S.provider === "workers-ai" ? "LIVE · OPEN WEIGHTS" : "DEMO MODE"; b.className = "badge " + (S.live ? "live" : "demo");
+  $("#pipeSub").textContent = S.provider === "meta-api" ? "Powered by Meta Model API: SAM 3.1 · Muse Spark · Muse Image" : "Powered by Meta open-weight models: Llama 4 Scout · Segment Anything (SlimSAM)";
+  $("#archMid").textContent = S.provider === "meta-api" ? "api.meta.ai/v1" : "Workers AI (Llama 4 Scout, FLUX.1)";
+  $("#preview").addEventListener("click", (e) => {
+    const r = e.target.getBoundingClientRect(), im = e.target;
+    S.point = { x: Math.round(((e.clientX - r.left) / r.width) * im.naturalWidth), y: Math.round(((e.clientY - r.top) / r.height) * im.naturalHeight) };
+    const pt = $("#pt"); pt.style.left = (e.clientX - r.left + im.offsetLeft) + "px"; pt.style.top = (e.clientY - r.top + im.offsetTop) + "px"; pt.classList.remove("hidden");
+    toast("Point set ✓ SAM will cut out what you tapped");
+  });
+  if (S.provider === "workers-ai") { const warm = () => loadSam().catch(() => {}); if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 2500); }
   $("#demoNote").classList.toggle("hidden", S.live);
   applySettings();
   $("#chips").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c) return; document.querySelectorAll(".chip").forEach((x) => x.classList.toggle("on", x === c)); $("#promptInput").value = c.dataset.p; });

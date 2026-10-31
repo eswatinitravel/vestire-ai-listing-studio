@@ -22,19 +22,19 @@
 <main>
   <section class="hero">
     <h1>Ek photo. Poori listing.<span>One photo → a ready-to-sell listing.</span></h1>
-    <p>Cut-out, studio &amp; lifestyle shots, captions in English and Roman Urdu, size chart, price suggestion and a Vestire import file — in about a minute.</p>
+    <p>Cut-out, studio &amp; flat-lay shots, captions in English and Roman Urdu, size chart, price suggestion and a Vestire import file — in about a minute.</p>
     <div id="demoNote" class="note hidden">
-      <b>Demo mode</b> — the Meta key isn't connected on this deployment yet, so the app replays a <u>saved sample</u> through the real pipeline code (the SAM mask is decoded and cut out live in your browser; text and extra shots are pre-recorded illustrative samples).
+      <b>Demo mode</b> — no AI backend is connected here, so the app replays a <u>saved sample</u> (a saved mask and listing text) through the real cut-out and canvas code in your browser.
     </div>
   </section>
 
   <section class="card" id="stepPhoto">
     <h2><em>1</em> Photo lagayein <small>Add a garment photo</small></h2>
     <div class="drop" id="drop">
-      <img id="preview" alt="" class="hidden">
+      <img id="preview" alt="Your garment photo — tap the garment" class="hidden"><span id="pt" class="pt hidden" aria-hidden="true"></span>
       <div id="dropEmpty" class="drop-empty">
         <div class="drop-ico">👕</div>
-        <p>Shirt, polo, trouser ya jacket ki photo<br><small>Any background is fine — SAM 3.1 finds the garment</small></p>
+        <p>Shirt, polo, trouser ya jacket ki photo<br><small>Any background is fine — Segment Anything finds the garment. Tap it on the photo to guide the cut-out.</small></p>
       </div>
     </div>
     <div class="row wrap">
@@ -59,10 +59,10 @@
   </section>
 
   <section class="card" id="pipeCard">
-    <h2><em>2</em> Pipeline <small>Powered by Meta: SAM 3.1 · Muse Spark · Muse Image</small></h2>
+    <h2><em>2</em> Pipeline <small id="pipeSub">Powered by Meta open-weight models</small></h2>
     <ol class="pipe" id="pipe"></ol>
     <div class="arch" aria-label="Architecture">
-      <span>📱 Browser</span><i>→</i><span>☁️ Cloudflare Pages Function<br><small>key stays server-side</small></span><i>→</i><span>Ⓜ api.meta.ai/v1</span>
+      <span>📱 Browser</span><i>→</i><span>☁️ Cloudflare Pages Function<br><small>no keys in the browser</small></span><i>→</i><span id="archMid">Workers AI</span>
     </div>
     <p class="tot" id="totalTime"></p>
   </section>
@@ -113,7 +113,7 @@
 </main>
 
 <footer>
-  <p><b>Powered by Meta:</b> SAM 3.1 · Muse Spark · Muse Image</p>
+  <p><b>Powered by Meta open-weight models:</b> Llama 4 Scout (Workers AI) · Segment Anything (SlimSAM, in-browser) · optional upgrade: Meta Model API (SAM 3.1 · Muse Spark · Muse Image)</p><p>Flat-lay backgrounds: FLUX.1 schnell on Workers AI</p>
   <p>Built for small Pakistani clothing sellers · Vestire Collection · Meta Global AI Developer Hackathon (Indie)</p>
 </footer>
 

@@ -40,13 +40,13 @@ export const SYSTEM_PROMPT = `You write product listings for small Pakistani clo
 Look at the photo and return ONLY the JSON object in the schema.
 Rules:
 - Describe only what is visible. Never state fabric, brand, origin or authenticity as fact. Use "looks like" for material (e.g. "looks like a cotton-blend oxford"). No brand names, no "original", "authentic", "branded", "imported", "100%".
-- Title: short, searchable, no brand, max 70 characters.
-- description_en: 2-3 short sentences. description_roman_urdu: same meaning in natural Roman Urdu (Urdu in Latin letters, e.g. "Yeh shirt rozana pehnne ke liye behtareen hai").
+- Title: short, searchable, no brand, max 70 characters, e.g. "Sky Blue Button-Down Oxford Shirt – Long Sleeve".
+- description_en: 3 sentences, 40-70 words: what it is, visible details (collar, pocket, buttons, fit), and how to style or where to wear it. description_roman_urdu: same meaning in natural Roman Urdu (Urdu in Latin letters, e.g. "Yeh shirt rozana pehnne ke liye behtareen hai").
 - social_caption: friendly Instagram/Facebook caption, max 2 emojis, English with a little Roman Urdu. hashtags: 8-12 tags starting with #, include #PakistaniFashion style local tags.
-- whatsapp_text: short message a seller can forward to a customer, include "Price: Rs ____" placeholder if unsure.
+- whatsapp_text: 2-4 lines a seller forwards to a customer: greeting (Assalam o Alaikum), product with key details, sizes, "Price: Rs ____", cash on delivery, ask for size and address.
 - size_chart: typical Pakistani men's sizes (S, M, L, XL) in inches; columns e.g. ["Size","Chest","Length","Shoulder"] for tops or ["Size","Waist","Length","Inseam"] for trousers. Mark it as a suggestion in unit, e.g. "inches (suggested, measure your stock)".
 - price_suggestion_pkr: realistic Pakistani market retail range in PKR for this kind of item from a small shop; note must say it is a suggestion only.
-- seo_title max 60 chars, seo_description max 155 chars.`;
+- style_tags: 4-6 tags. seo_title max 60 chars, seo_description 120-155 chars.`;
 
 export function buildListingRequest({ imageDataUrl, hint = "", model = "muse-spark-1.3" }) {
   const userText = `Create the listing for the garment in this photo.${hint ? ` Seller note: ${String(hint).slice(0, 300)}` : ""}`;
