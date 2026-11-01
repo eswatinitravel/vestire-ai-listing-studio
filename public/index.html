@@ -3,129 +3,177 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vestire AI Listing Studio — one photo, full listing</title>
-<meta name="description" content="Pakistani clothing sellers: take one photo of a garment and get a cut-out, studio and lifestyle shots, captions in English and Roman Urdu, a size chart and a Vestire import file. Powered by Meta SAM 3.1, Muse Spark and Muse Image.">
-<meta name="theme-color" content="#061a2e">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23083b52'/%3E%3Cpath d='M18 18l14 30 14-30' fill='none' stroke='%232dd4bf' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>Vestire AI Listing Studio: one photo, a ready-to-sell listing</title>
+<meta name="description" content="For Pakistani clothing sellers: one garment photo becomes a cut-out, studio and flat-lay shots, captions in English and Roman Urdu, a size chart and a Vestire import file. Built on Meta open-weight models: Llama 4 Scout and Segment Anything.">
+<meta name="theme-color" content="#0a2236">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a2236'/%3E%3Cpath d='M18 18l14 30 14-30' fill='none' stroke='%235eead4' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="/fonts/geist-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/gloock-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="modulepreload" href="/sam-worker.js">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
-<header class="top">
-  <div class="brand"><span class="logo">V</span><div><b>Vestire</b><small>AI Listing Studio</small></div></div>
-  <div class="top-r">
-    <span id="modeBadge" class="badge">…</span>
-    <button id="settingsBtn" class="icon-btn" aria-label="Settings" title="Settings">⚙︎</button>
+<!--ICONS-->
+<a class="skip" href="#stepPhoto">Skip to the studio</a>
+<header class="appbar">
+  <div class="container appbar-in">
+    <a class="brand" href="/" aria-label="Vestire AI Listing Studio, home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M9 9l7 15 7-15"/></svg>
+      <span class="wordmark">Vestire</span><span class="product">Listing Studio</span>
+    </a>
+    <div class="appbar-r">
+      <span id="modelStatus" class="pill model hidden" data-state="idle" role="status" aria-live="polite"><svg class="i" aria-hidden="true"><use href="#i-loader-circle"/></svg><span class="txt">Loading AI model</span></span>
+      <span id="modeBadge" class="pill mode">Connecting</span>
+      <button id="settingsBtn" class="icon-btn" aria-label="Settings" title="Settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></button>
+    </div>
   </div>
 </header>
 
-<main>
-  <section class="hero">
-    <h1>Ek photo. Poori listing.<span>One photo → a ready-to-sell listing.</span></h1>
-    <p>Cut-out, studio &amp; flat-lay shots, captions in English and Roman Urdu, size chart, price suggestion and a Vestire import file — in about a minute.</p>
-    <div id="demoNote" class="note hidden">
-      <b>Demo mode</b> — no AI backend is connected here, so the app replays a <u>saved sample</u> (a saved mask and listing text) through the real cut-out and canvas code in your browser.
-    </div>
+<main class="container">
+  <section class="intro">
+    <h1>One photo. A ready-to-sell listing.</h1>
+    <p class="lead">Cut-out, studio and flat-lay shots, captions in English and Roman Urdu, a size chart, a price suggestion and a Vestire import file, in under a minute.</p>
+    <div id="demoNote" class="banner info hidden"><svg class="i" aria-hidden="true"><use href="#i-info"/></svg><p><b>Demo mode.</b> No AI backend is connected here, so the studio replays a saved sample (a saved mask and listing text) through the real cut-out and canvas code in your browser.</p></div>
   </section>
 
-  <section class="card" id="stepPhoto">
-    <h2><em>1</em> Photo lagayein <small>Add a garment photo</small></h2>
-    <div class="drop" id="drop">
-      <img id="preview" alt="Your garment photo — tap the garment" class="hidden"><span id="pt" class="pt hidden" aria-hidden="true"></span>
-      <div id="dropEmpty" class="drop-empty">
-        <div class="drop-ico">👕</div>
-        <p>Shirt, polo, trouser ya jacket ki photo<br><small>Any background is fine — Segment Anything finds the garment. Tap it on the photo to guide the cut-out.</small></p>
+  <ol class="stepper" id="stepper" aria-label="Progress">
+    <li data-s="1" class="is-current"><span class="num">1</span><span class="lbl">Upload</span></li>
+    <li data-s="2"><span class="num">2</span><span class="lbl">Generate</span></li>
+    <li data-s="3"><span class="num">3</span><span class="lbl">Review and export</span></li>
+  </ol>
+
+  <div class="workspace">
+    <section class="panel" id="stepPhoto" aria-labelledby="h-photo">
+      <div class="panel-head">
+        <h2 id="h-photo">Add a garment photo</h2>
+        <p class="sub">Any background works. Tap the garment to guide the cut-out.</p>
+      </div>
+      <div class="drop" id="drop">
+        <img id="preview" alt="Your garment photo. Tap the garment to set the cut-out point." class="hidden"><span id="pt" class="pt hidden" aria-hidden="true"></span>
+        <div id="dropEmpty" class="drop-empty">
+          <span class="drop-ico"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg></span>
+          <p class="drop-t">Drop a photo here</p>
+          <p class="drop-s">Shirt, polo, trousers or jacket. JPG or PNG from your phone camera is perfect.</p>
+        </div>
+        <span id="tapHint" class="tap-hint hidden"><svg class="i" aria-hidden="true"><use href="#i-mouse-pointer-click"/></svg>Tap the garment</span>
+      </div>
+      <div class="src-row">
+        <label class="btn secondary"><input type="file" accept="image/*" capture="environment" id="camInput" hidden><svg class="i" aria-hidden="true"><use href="#i-camera"/></svg>Camera</label>
+        <label class="btn secondary"><input type="file" accept="image/*" id="fileInput" hidden><svg class="i" aria-hidden="true"><use href="#i-image"/></svg>Gallery</label>
+        <button class="btn ghost" id="sampleBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-shirt"/></svg>Use sample photo</button>
+      </div>
+      <div class="field">
+        <span class="lbl" id="lbl-garment">Garment type</span>
+        <div class="chips" id="chips" role="group" aria-labelledby="lbl-garment">
+          <button type="button" data-p="shirt" class="chip on" aria-pressed="true">Shirt</button><button type="button" data-p="polo shirt" class="chip" aria-pressed="false">Polo</button><button type="button" data-p="t-shirt" class="chip" aria-pressed="false">T-shirt</button><button type="button" data-p="trousers" class="chip" aria-pressed="false">Trousers</button><button type="button" data-p="jeans" class="chip" aria-pressed="false">Jeans</button><button type="button" data-p="jacket" class="chip" aria-pressed="false">Jacket</button>
+        </div>
+        <input id="promptInput" class="inp" value="shirt" maxlength="30" aria-label="Garment type, in your own words">
+      </div>
+      <label class="field">
+        <span class="lbl">Seller note <small>optional</small></span>
+        <input id="hintInput" class="inp" maxlength="200" placeholder="For example: stock M and L, price around 2500">
+      </label>
+      <button class="btn primary big" id="goBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg><span>Generate listing</span></button>
+    </section>
+
+    <section class="panel dark" id="pipeCard" aria-labelledby="h-pipe">
+      <div class="panel-head">
+        <h2 id="h-pipe">AI pipeline</h2>
+        <p class="sub" id="pipeSub">Powered by Meta open-weight models</p>
+      </div>
+      <ol class="pipe" id="pipe"></ol>
+      <p class="pipe-empty" id="pipeEmpty">Press Generate and each model reports here with a live timer.</p>
+      <div class="arch" aria-label="Architecture">
+        <div class="node"><svg class="i" aria-hidden="true"><use href="#i-monitor-smartphone"/></svg><span><b>Your browser</b><small>SlimSAM in a Web Worker</small></span></div>
+        <svg class="i arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        <div class="node"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg><span><b>Pages Function</b><small>no keys in the browser</small></span></div>
+        <svg class="i arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        <div class="node"><svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg><span><b id="archMid">Workers AI</b><small id="archSub">Llama 4 Scout, FLUX.1</small></span></div>
+      </div>
+      <p class="tot" id="totalTime" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <section class="review hidden" id="review" aria-labelledby="h-review">
+    <div class="review-head">
+      <div>
+        <h2 id="h-review">Review and export</h2>
+        <p class="sub">Everything is editable. Sab kuch badal sakte hain.</p>
+      </div>
+      <p id="reviewStatus" class="status-line" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="gallery" id="gallery" aria-label="Generated images"></div>
+    <div class="variant">
+      <label class="variant-f"><span class="lbl">Colour variant</span><input id="colourInput" class="inp" value="navy blue" maxlength="30"></label>
+      <button class="btn secondary" id="variantBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-palette"/></svg>Preview colour</button>
+    </div>
+
+    <div id="listingError" class="banner error hidden" role="alert"><svg class="i" aria-hidden="true"><use href="#i-triangle-alert"/></svg><p><b>The listing text did not come back.</b> <span id="listingErrorMsg"></span></p><button class="btn secondary sm" id="retryBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Try again</button></div>
+    <div id="warnings" class="banner warn hidden" role="status"></div>
+
+    <div class="form-grid" id="form">
+      <div class="panel form-panel">
+        <h3>Listing details</h3>
+        <div class="grid2">
+          <div class="field full"><span class="lbl">Title</span><div class="cp"><input class="inp" data-f="title" aria-label="Title"><button class="copy" data-copy="title" type="button" aria-label="Copy title"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div></div>
+          <label class="field"><span class="lbl">Type</span><select class="inp" data-f="product_type"></select></label>
+          <label class="field"><span class="lbl">Category</span><select class="inp" data-f="category"><option value="men">Men</option><option value="women">Women</option><option value="kids">Juniors</option></select></label>
+          <label class="field"><span class="lbl">Colours</span><input class="inp" data-f="colours" data-list="1"></label>
+          <label class="field"><span class="lbl">Style tags</span><input class="inp" data-f="style_tags" data-list="1"></label>
+          <label class="field full"><span class="lbl">Material <small>AI guess, please verify</small></span><input class="inp" data-f="material_guess"></label>
+          <div class="field full"><span class="lbl">Description, English</span><div class="cp"><textarea class="inp" rows="3" data-f="description_en" aria-label="Description in English"></textarea><button class="copy" data-copy="description_en" type="button" aria-label="Copy English description"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div></div>
+          <div class="field full"><span class="lbl">Tafseel, Roman Urdu</span><div class="cp"><textarea class="inp" rows="3" data-f="description_roman_urdu" aria-label="Description in Roman Urdu"></textarea><button class="copy" data-copy="description_roman_urdu" type="button" aria-label="Copy Roman Urdu description"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div></div>
+        </div>
+      </div>
+      <div class="panel form-panel">
+        <h3>Social and search</h3>
+        <div class="grid2">
+          <div class="field full"><span class="lbl">Instagram and Facebook caption</span><div class="cp"><textarea class="inp" rows="3" data-f="social_caption" aria-label="Social caption"></textarea><button class="copy" data-copy="social" type="button" aria-label="Copy caption with hashtags"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div></div>
+          <label class="field full"><span class="lbl">Hashtags</span><input class="inp" data-f="hashtags" data-list="space"></label>
+          <div class="field full"><span class="lbl">WhatsApp message</span><div class="cp"><textarea class="inp" rows="3" data-f="whatsapp_text" aria-label="WhatsApp message"></textarea><button class="copy" data-copy="whatsapp_text" type="button" aria-label="Copy WhatsApp message"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg></button></div></div>
+          <label class="field full"><span class="lbl">Size chart <small id="sizeUnit"></small></span><textarea class="inp mono" rows="5" id="sizeChart"></textarea><small class="hint">One row per line, comma-separated. The first line holds the column names.</small></label>
+          <label class="field"><span class="lbl">SEO title</span><input class="inp" data-f="seo_title" maxlength="60"></label>
+          <label class="field"><span class="lbl">SEO description</span><input class="inp" data-f="seo_description" maxlength="155"></label>
+        </div>
       </div>
     </div>
-    <div class="row wrap">
-      <label class="btn ghost"><input type="file" accept="image/*" capture="environment" id="camInput" hidden>📷 Camera</label>
-      <label class="btn ghost"><input type="file" accept="image/*" id="fileInput" hidden>🖼️ Gallery</label>
-      <button class="btn ghost" id="sampleBtn">✨ Sample photo</button>
-    </div>
-    <div class="field">
-      <span class="lbl">Kya hai? · Garment (SAM prompt)</span>
-      <div class="chips" id="chips">
-        <button data-p="shirt" class="chip on">Shirt</button><button data-p="polo shirt" class="chip">Polo</button>
-        <button data-p="t-shirt" class="chip">T-shirt</button><button data-p="trousers" class="chip">Trousers</button>
-        <button data-p="jeans" class="chip">Jeans</button><button data-p="jacket" class="chip">Jacket</button>
-      </div>
-      <input id="promptInput" class="inp" value="shirt" maxlength="30" aria-label="Garment noun for SAM">
-    </div>
-    <div class="field">
-      <span class="lbl">Note (optional) · e.g. “stock M, L · price around 2500”</span>
-      <input id="hintInput" class="inp" maxlength="200" placeholder="Seller note for Muse Spark">
-    </div>
-    <button class="btn primary big" id="goBtn">✨ Listing banayein · Generate</button>
-  </section>
 
-  <section class="card" id="pipeCard">
-    <h2><em>2</em> Pipeline <small id="pipeSub">Powered by Meta open-weight models</small></h2>
-    <ol class="pipe" id="pipe"></ol>
-    <div class="arch" aria-label="Architecture">
-      <span>📱 Browser</span><i>→</i><span>☁️ Cloudflare Pages Function<br><small>no keys in the browser</small></span><i>→</i><span id="archMid">Workers AI</span>
-    </div>
-    <p class="tot" id="totalTime"></p>
-  </section>
-
-  <section class="card hidden" id="review">
-    <h2><em>3</em> Review &amp; edit <small>Sab kuch badal sakte hain · everything is editable</small></h2>
-    <div class="gallery" id="gallery"></div>
-    <div class="row wrap variant">
-      <input id="colourInput" class="inp" value="navy blue" maxlength="30" aria-label="Variant colour">
-      <button class="btn ghost" id="variantBtn">🎨 Rang badlein · Colour variant</button>
-    </div>
-    <div id="warnings" class="warn hidden"></div>
-
-    <div class="grid2">
-      <div class="field"><span class="lbl">Title</span><div class="cp"><input class="inp" data-f="title"><button class="copy" data-copy="title">Copy</button></div></div>
-      <div class="field two">
-        <label><span class="lbl">Type</span><select class="inp" data-f="product_type"></select></label>
-        <label><span class="lbl">Category</span><select class="inp" data-f="category"><option value="men">Men</option><option value="women">Women</option><option value="kids">Juniors</option></select></label>
-      </div>
-      <div class="field"><span class="lbl">Colours · Rang</span><input class="inp" data-f="colours" data-list="1"></div>
-      <div class="field"><span class="lbl">Style tags</span><input class="inp" data-f="style_tags" data-list="1"></div>
-      <div class="field full"><span class="lbl">Material (AI guess — verify)</span><input class="inp" data-f="material_guess"></div>
-      <div class="field full"><span class="lbl">Description (English)</span><div class="cp"><textarea class="inp" rows="3" data-f="description_en"></textarea><button class="copy" data-copy="description_en">Copy</button></div></div>
-      <div class="field full"><span class="lbl">Tafseel (Roman Urdu)</span><div class="cp"><textarea class="inp" rows="3" data-f="description_roman_urdu"></textarea><button class="copy" data-copy="description_roman_urdu">Copy</button></div></div>
-      <div class="field full"><span class="lbl">Instagram / Facebook caption</span><div class="cp"><textarea class="inp" rows="3" data-f="social_caption"></textarea><button class="copy" data-copy="social">Copy</button></div></div>
-      <div class="field full"><span class="lbl">Hashtags</span><input class="inp" data-f="hashtags" data-list="space"></div>
-      <div class="field full"><span class="lbl">WhatsApp message</span><div class="cp"><textarea class="inp" rows="3" data-f="whatsapp_text"></textarea><button class="copy" data-copy="whatsapp_text">Copy</button></div></div>
-      <div class="field full"><span class="lbl">Size chart <small id="sizeUnit"></small></span><textarea class="inp mono" rows="5" id="sizeChart"></textarea><small class="hint">One row per line, comma-separated. First line = columns.</small></div>
-      <div class="field"><span class="lbl">SEO title</span><input class="inp" data-f="seo_title" maxlength="60"></div>
-      <div class="field"><span class="lbl">SEO description</span><input class="inp" data-f="seo_description" maxlength="155"></div>
-    </div>
-
-    <div class="price">
-      <div><span class="lbl">AI price suggestion (PKR)</span><b id="priceSug">—</b><small id="priceNote"></small></div>
-      <label><span class="lbl">Aap ki qeemat · Your price (Rs)</span><input class="inp" id="priceInput" inputmode="numeric" placeholder="e.g. 2499"></label>
-      <label><span class="lbl">SKU (optional)</span><input class="inp" id="skuInput" maxlength="40" placeholder="VC-S001"></label>
+    <div class="panel price">
+      <div class="price-sug"><span class="lbl">AI price suggestion</span><b id="priceSug" class="num">Pending</b><small id="priceNote"></small></div>
+      <label class="field"><span class="lbl">Your price (Rs)</span><input class="inp num" id="priceInput" inputmode="numeric" placeholder="e.g. 2499"></label>
+      <label class="field"><span class="lbl">SKU <small>optional</small></span><input class="inp" id="skuInput" maxlength="40" placeholder="VC-S001"></label>
     </div>
 
     <div class="actions">
-      <button class="btn primary" id="zipBtn">⬇️ Download listing pack (ZIP)</button>
-      <button class="btn ghost" id="csvBtn">📄 Vestire CSV</button>
-      <button class="btn ghost" id="waBtn">💬 WhatsApp</button>
-      <button class="btn ghost" id="copyAllBtn">📋 Copy all</button>
-      <button class="btn ghost hidden" id="sendBtn">🛍️ Send to Vestire (hidden draft)</button>
+      <button class="btn primary" id="zipBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download listing pack</button>
+      <button class="btn secondary" id="csvBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-file-spreadsheet"/></svg>Vestire CSV</button>
+      <button class="btn secondary" id="waBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-message-circle"/></svg>WhatsApp</button>
+      <button class="btn secondary" id="copyAllBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Copy all text</button>
+      <button class="btn secondary hidden" id="sendBtn" type="button"><svg class="i" aria-hidden="true"><use href="#i-shopping-bag"/></svg>Send to Vestire as hidden draft</button>
     </div>
-    <p class="fine">AI text, size chart and price are <b>suggestions</b>. Check fabric, sizes and price before you publish. No brand or authenticity claims are made.</p>
+    <p class="fine">AI text, size chart and price are suggestions. Check fabric, sizes and price before you publish. No brand or authenticity claims are made.</p>
   </section>
 </main>
 
-<footer>
-  <p><b>Powered by Meta open-weight models:</b> Llama 4 Scout (Workers AI) · Segment Anything (SlimSAM, in-browser) · optional upgrade: Meta Model API (SAM 3.1 · Muse Spark · Muse Image)</p><p>Flat-lay backgrounds: FLUX.1 schnell on Workers AI</p>
-  <p>Built for small Pakistani clothing sellers · Vestire Collection · Meta Global AI Developer Hackathon (Indie)</p>
+<footer class="foot">
+  <div class="container foot-in">
+    <p><b>Powered by Meta open-weight models.</b> Llama 4 Scout on Cloudflare Workers AI writes the listing; Segment Anything (SlimSAM) cuts the garment out in your browser. Optional upgrade: Meta Model API with SAM 3.1, Muse Spark and Muse Image. Flat-lay backgrounds by FLUX.1 schnell on Workers AI.</p>
+    <p>Built for small Pakistani clothing sellers by Vestire Collection for the Meta Global AI Developer Hackathon, Indie track. Icons by Lucide (ISC).</p>
+  </div>
 </footer>
 
-<dialog id="settings">
+<div class="mobilebar" id="mobileBar"><button class="btn primary big" id="mobileAction" type="button"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg><span>Generate listing</span></button></div>
+
+<dialog id="settings" aria-labelledby="h-settings">
   <form method="dialog" class="dlg">
-    <h3>Settings</h3>
-    <label class="switch"><input type="checkbox" id="sendToggle"> <span>Enable “Send to Vestire” (off by default)</span></label>
-    <p class="fine">Creates the product as a <b>hidden draft</b> in your Vestire admin (you switch it on later). Password is used once per send and is not stored.</p>
-    <label><span class="lbl">Store URL</span><input class="inp" id="storeUrl" placeholder="https://your-store.pages.dev"></label>
-    <label><span class="lbl">Staff username</span><input class="inp" id="storeUser" autocomplete="username"></label>
-    <label><span class="lbl">Staff password</span><input class="inp" id="storePass" type="password" autocomplete="current-password"></label>
-    <div class="row end"><button class="btn primary" value="ok">Save</button></div>
+    <h3 id="h-settings">Settings</h3>
+    <label class="switch"><input type="checkbox" id="sendToggle"> <span>Enable Send to Vestire (off by default)</span></label>
+    <p class="fine">Creates the product as a <b>hidden draft</b> in your Vestire admin; you switch it on later. Your password is used once per send and is never stored.</p>
+    <label class="field"><span class="lbl">Store URL</span><input class="inp" id="storeUrl" placeholder="https://your-store.pages.dev"></label>
+    <label class="field"><span class="lbl">Staff username</span><input class="inp" id="storeUser" autocomplete="username"></label>
+    <label class="field"><span class="lbl">Staff password</span><input class="inp" id="storePass" type="password" autocomplete="current-password"></label>
+    <div class="dlg-actions"><button class="btn primary" value="ok">Save</button></div>
   </form>
 </dialog>
 <div id="toast" role="status" aria-live="polite"></div>

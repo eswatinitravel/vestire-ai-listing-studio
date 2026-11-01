@@ -8,7 +8,10 @@ function asset(path) {
   if (!decoded.has(path)) decoded.set(path, a.b64 ? Uint8Array.from(atob(a.body), (c) => c.charCodeAt(0)) : a.body);
   return { type: a.type, body: decoded.get(path) };
 }
-const SEC = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "camera=(self)" };
+// COOP + COEP (credentialless) make the page cross-origin isolated, which unlocks multi-threaded WASM for SlimSAM.
+// "credentialless" still allows the CORS-enabled CDNs we use (jsDelivr, Hugging Face); browsers without support just stay single-threaded.
+export const SEC = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "camera=(self)",
+  "Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "credentialless" };
 
 export default {
   async fetch(request, env) {
@@ -19,7 +22,7 @@ export default {
     let p = url.pathname === "/" ? "/index.html" : url.pathname;
     const a = asset(p);
     if (!a) return new Response("Not found", { status: 404 });
-    const cache = p === "/index.html" ? "no-cache" : "public, max-age=3600";
+    const cache = p === "/index.html" ? "no-cache" : p.startsWith("/fonts/") ? "public, max-age=604800" : "public, max-age=3600";
     return new Response(a.body, { headers: { "Content-Type": a.type, "Cache-Control": cache, ...SEC } });
   },
 };

@@ -1,0 +1,116 @@
+1
+00:00:00,600 --> 00:00:05,302
+In every bazaar in Pakistan, small clothing sellers have good stock.
+
+2
+00:00:05,652 --> 00:00:12,618
+But getting one shirt online means photos, background removal, captions, sizes and prices.
+
+3
+00:00:12,968 --> 00:00:15,789
+Hours of work, for every single item.
+
+4
+00:00:17,190 --> 00:00:19,802
+This is Vestire AI Listing Studio.
+
+5
+00:00:20,152 --> 00:00:22,321
+One photo. A full listing.
+
+6
+00:00:23,720 --> 00:00:27,191
+The seller adds one photo, straight from the shop counter.
+
+7
+00:00:27,541 --> 00:00:31,266
+No need to clean the background. Just tap the garment.
+
+8
+00:00:32,670 --> 00:00:33,692
+Tap Generate.
+
+9
+00:00:34,042 --> 00:00:37,592
+Meta's Segment Anything model, in its compressed SlimSAM
+
+10
+00:00:37,592 --> 00:00:41,078
+version, cuts the garment out right inside the browser.
+
+11
+00:00:41,428 --> 00:00:45,656
+At the same time, Meta Llama 4 Scout, an open-weights model,
+
+12
+00:00:45,656 --> 00:00:48,615
+looks at the photo and writes the listing.
+
+13
+00:00:48,965 --> 00:00:53,737
+On this live run, the whole pipeline finished in under twenty seconds.
+
+14
+00:00:55,140 --> 00:01:00,457
+Back comes a clean cut-out, a white studio shot, and a flat-lay scene.
+
+15
+00:01:00,807 --> 00:01:04,720
+All of them use the seller's real garment, not an AI copy.
+
+16
+00:01:05,070 --> 00:01:07,729
+Type a colour, and you get a colour preview too.
+
+17
+00:01:09,130 --> 00:01:10,628
+Everything is editable.
+
+18
+00:01:10,978 --> 00:01:14,470
+If a risky claim like "original" slips into the title,
+
+19
+00:01:14,470 --> 00:01:17,445
+the app flags it before anything is published.
+
+20
+00:01:17,795 --> 00:01:21,185
+Descriptions in English and Roman Urdu, captions,
+
+21
+00:01:21,185 --> 00:01:24,575
+hashtags, and a size chart are all ready to edit.
+
+22
+00:01:24,925 --> 00:01:28,894
+And the price is only a suggestion. The seller decides.
+
+23
+00:01:30,290 --> 00:01:35,259
+Share it to WhatsApp in one tap, or download the full listing pack.
+
+24
+00:01:35,609 --> 00:01:41,983
+Images, captions, listing data, and a CSV file, ready for the store's import.
+
+25
+00:01:43,380 --> 00:01:48,396
+For Vestire stores, there is also an optional Send to Vestire setting.
+
+26
+00:01:48,746 --> 00:01:52,265
+It is off by default, and it creates the product as a
+
+27
+00:01:52,265 --> 00:01:56,049
+hidden draft, so the owner checks it before it goes live.
+
+28
+00:01:57,450 --> 00:02:01,303
+Hours of work, in about a minute. Free to use.
+
+29
+00:02:01,653 --> 00:02:07,433
+Vestire AI Listing Studio. Built with Meta Llama 4 Scout and Segment Anything.
+

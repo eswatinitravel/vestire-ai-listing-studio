@@ -40,7 +40,7 @@ The deployed site runs the primary path (badge **LIVE · OPEN WEIGHTS**). If `MO
                                                     └───────────────────────────────┘
 ```
 
-Model weights for SlimSAM (~14 MB, quantised) download once from the Hugging Face CDN and are cached by the browser; the app warms the model while the user picks a photo.
+Model weights for SlimSAM (~14 MB, quantised) download once from the Hugging Face CDN and are kept in the browser's Cache API. SlimSAM runs in a **Web Worker** (`src/sam.worker.js`), so the page and the live pipeline timers never freeze; the model warms as soon as the page loads ("AI model ready" in the top bar), and the image embedding (the slow part) is computed the moment a photo is chosen. The page is cross-origin isolated (COOP + COEP `credentialless`), so ONNX Runtime uses multi-threaded WASM where the browser supports it. Llama 4 Scout (listing), SlimSAM (cut-out) and FLUX.1 (flat-lay background) all start in parallel; the photo is downscaled to 672 px (2×2 Llama 4 tiles) before it is sent.
 
 ## Code map
 
@@ -48,7 +48,9 @@ Model weights for SlimSAM (~14 MB, quantised) download once from the Hugging Fac
 public/            index.html, app.css, demo/ (sample photo, saved SAM mask, saved listing, scene)
 src/app.js         UI + pipeline orchestration (provider: workers-ai | meta-api | demo)
 src/lib/sam.js     SAM 3.1 wire text → masks (@meta-sam/parser) → alpha map
-src/lib/segment-browser.js  SlimSAM in the browser (transformers.js from jsDelivr)
+src/lib/segment-browser.js  SlimSAM client (talks to the Web Worker)
+src/lib/sam-core.js         worker message handler + client RPC + mask→alpha (unit-tested with a fake model)
+src/sam.worker.js           Web Worker entry: transformers.js from jsDelivr, Cache API, multi-thread WASM when isolated
 src/lib/listing.js prompt, JSON schema, JSON extraction, normalisation, risky-claim checks
 src/lib/compose.js colour maths + canvas composition (studio, flat-lay, recolour)
 src/lib/csv.js     Vestire import row (headers = admin TPL_HEAD), CSV escaping incl. formula-injection guard
@@ -57,14 +59,14 @@ src/lib/vestire.js Send-to-Vestire (hidden draft) + store-URL guard
 worker/api.js      /api/config, /api/listing, /api/scene (Workers AI); /api/segment, /api/image (Meta API); /api/vestire
 worker/index.js    static files (inlined) + routing
 tools/             build.mjs, deploy.sh, dev.mjs (runs the built worker on Node), e2e.py (headless check)
-test/              38 node:test unit tests (mask decoding, JSON parsing, CSV/ZIP, proxy routes, Workers AI fallbacks)
+test/              46 node:test unit tests (mask decoding, JSON parsing, CSV/ZIP, proxy routes, Workers AI fallbacks, SAM worker protocol, isolation headers)
 ```
 
 ## Setup
 
 ```bash
 npm install
-npm test                 # 38 tests
+npm test                 # 46 tests
 npm run build            # → pages-dist/_worker.js + _routes.json
 npm run dev              # local server on :8788 (demo mode unless META/AI configured)
 CLOUDFLARE_API_TOKEN=… sh tools/deploy.sh   # direct upload to Pages project vestire-listing-studio
@@ -86,4 +88,4 @@ Cloudflare Pages project settings (already set on `vestire-listing-studio`):
 
 ## Licences
 
-SlimSAM / SAM: Apache-2.0 · transformers.js: Apache-2.0 · Llama 4 / Llama 3.2: Meta Llama community licences (used via Workers AI) · `@meta-sam/parser`: SAM License · fflate: MIT · FLUX.1 schnell: Apache-2.0.
+SlimSAM / SAM: Apache-2.0 · transformers.js: Apache-2.0 · Llama 4 / Llama 3.2: Meta Llama community licences (used via Workers AI) · `@meta-sam/parser`: SAM License · fflate: MIT · FLUX.1 schnell: Apache-2.0 · Lucide icons: ISC · Geist and Gloock fonts: SIL OFL 1.1.

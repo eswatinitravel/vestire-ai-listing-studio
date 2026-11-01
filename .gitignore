@@ -4,3 +4,12 @@ pages-dist
 worker/_assets.gen.js
 assets-src/*.png
 .env
+video/raw/
+video/build/
+video/*.mp4
+video/tts/
+video/frames/
+video/*.log
+*.onnx
+__pycache__/
+.hallmark/

@@ -1,0 +1,71 @@
+[
+ [
+  "problem",
+  [
+   "In every bazaar in Pakistan, small clothing sellers have good stock.",
+   "But getting one shirt online means photos, background removal, captions, sizes and prices.",
+   "Hours of work, for every single item."
+  ]
+ ],
+ [
+  "intro",
+  [
+   "This is Vestire AI Listing Studio.",
+   "One photo. A full listing."
+  ]
+ ],
+ [
+  "upload",
+  [
+   "The seller adds one photo, straight from the shop counter.",
+   "No need to clean the background. Just tap the garment."
+  ]
+ ],
+ [
+  "generate",
+  [
+   "Tap Generate.",
+   "Meta's Segment Anything model, in its compressed SlimSAM version, cuts the garment out right inside the browser.",
+   "At the same time, Meta Llama 4 Scout, an open-weights model, looks at the photo and writes the listing.",
+   "On this live run, the whole pipeline finished in under twenty seconds."
+  ]
+ ],
+ [
+  "gallery",
+  [
+   "Back comes a clean cut-out, a white studio shot, and a flat-lay scene.",
+   "All of them use the seller's real garment, not an AI copy.",
+   "Type a colour, and you get a colour preview too."
+  ]
+ ],
+ [
+  "form",
+  [
+   "Everything is editable.",
+   "If a risky claim like \"original\" slips into the title, the app flags it before anything is published.",
+   "Descriptions in English and Roman Urdu, captions, hashtags, and a size chart are all ready to edit.",
+   "And the price is only a suggestion. The seller decides."
+  ]
+ ],
+ [
+  "share",
+  [
+   "Share it to WhatsApp in one tap, or download the full listing pack.",
+   "Images, captions, listing data, and a CSV file, ready for the store's import."
+  ]
+ ],
+ [
+  "draft",
+  [
+   "For Vestire stores, there is also an optional Send to Vestire setting.",
+   "It is off by default, and it creates the product as a hidden draft, so the owner checks it before it goes live."
+  ]
+ ],
+ [
+  "end",
+  [
+   "Hours of work, in about a minute. Free to use.",
+   "Vestire AI Listing Studio. Built with Meta Llama 4 Scout and Segment Anything."
+  ]
+ ]
+]

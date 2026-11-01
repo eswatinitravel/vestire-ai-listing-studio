@@ -6,3 +6,7 @@ def proxy_cfg():
     cfg = {"server": f"{u.scheme}://{u.hostname}:{u.port}"}
     if u.username: cfg["username"] = urllib.parse.unquote(u.username); cfg["password"] = urllib.parse.unquote(u.password or "")
     return cfg
+# Use the system Chromium when Playwright's own download is unavailable (sandbox).
+import shutil
+CHROME = os.environ.get("CHROME") or shutil.which("chromium") or None
+def launch_kw(): return {"executable_path": CHROME} if CHROME else {}
