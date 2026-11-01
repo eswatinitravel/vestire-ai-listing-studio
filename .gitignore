@@ -13,3 +13,4 @@ video/*.log
 *.onnx
 __pycache__/
 .hallmark/
+video/raw_old/

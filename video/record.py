@@ -43,19 +43,21 @@ def run(p, b, name, vp, dpr, size, mobile):
         box = pg.locator(sel).bounding_box(); x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
         pg.mouse.move(x, y); pg.mouse.down(); pg.mouse.up()
     pg.goto(U + "/", wait_until="networkidle"); mark("loaded")
-    pg.wait_for_timeout(2500); M["badge"] = pg.inner_text("#modeBadge")
+    pg.wait_for_function("document.querySelector('#modelStatus')?.dataset.state==='ready'", timeout=120000); mark("model_ready")
+    pg.wait_for_timeout(1500); M["badge"] = pg.inner_text("#modeBadge")
     smooth("#stepPhoto", wait=1500); mark("photo_card")
     pg.set_input_files("#fileInput", PHOTO); pg.wait_for_timeout(1500); mark("uploaded")
     tap('.chip[data-p="shirt"]'); pg.wait_for_timeout(800)
     box = pg.locator("#preview").bounding_box()
-    pg.mouse.click(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.45); mark("tapped"); pg.wait_for_timeout(2200)
+    pg.mouse.click(box["x"] + box["width"] * 0.5, box["y"] + box["height"] * 0.45); mark("tapped"); pg.wait_for_timeout(2500)
+    pg.fill("#hintInput", ""); pg.type("#hintInput", "Stock M and L", delay=70); pg.wait_for_timeout(1200); mark("hint_typed")
     smooth("#goBtn", block="center", wait=900)
     tap("#goBtn"); mark("generate")
-    pg.wait_for_timeout(400); smooth("#pipeCard", wait=600)
+    pg.wait_for_timeout(300); smooth("#pipeCard", block="start", wait=600); mark("pipe_shown")
     pg.wait_for_function("document.querySelector('#totalTime').textContent.length>0", timeout=240000, polling=200); mark("done")
     M["steps"] = pg.eval_on_selector_all("#pipe li", "els=>els.map(e=>e.querySelector('b').textContent+' => '+e.querySelector('.st').textContent)")
     M["total"] = pg.inner_text("#totalTime")
-    smooth("#pipeCard", wait=2500)  # hold on timers (app auto-scrolls to review; bring pipeline back)
+    smooth("#pipeCard", wait=2500); mark("pipe_hold_start")  # hold on timers (app auto-scrolls to review; bring pipeline back)
     mark("pipe_hold_end")
     smooth("#gallery", wait=2500); mark("gallery")
     pg.locator("#colourInput").scroll_into_view_if_needed(); pg.fill("#colourInput", ""); pg.type("#colourInput", "maroon", delay=90)
@@ -82,7 +84,7 @@ def run(p, b, name, vp, dpr, size, mobile):
         mark("wa_click"); pop = pi.value; wa_url = pop.url
         try: pop.wait_for_load_state("domcontentloaded", timeout=10000)
         except Exception: pass
-        pop.wait_for_timeout(4000); wa_url = pop.url; mark("wa_popup_end"); M["wa_video"] = pop.video.path() if pop.video else None; pop.close()
+        pop.wait_for_timeout(4000); wa_url = pop.url; mark("wa_popup_end"); M["wa_video"] = str(pop.video.path()) if pop.video else None; pop.close()
     except Exception as e: M["wa_error"] = str(e)[:200]
     M["wa_url"] = wa_url
     pg.bring_to_front(); pg.wait_for_timeout(600)
@@ -94,7 +96,7 @@ def run(p, b, name, vp, dpr, size, mobile):
     tap("#settingsBtn"); pg.wait_for_timeout(1200); mark("settings_open")
     tap("#sendToggle"); pg.wait_for_timeout(2500); mark("settings_toggled")
     tap("#sendToggle"); pg.wait_for_timeout(600); pg.keyboard.press("Escape"); pg.wait_for_timeout(1000); mark("end")
-    M["errors"] = errs; M["video"] = pg.video.path()
+    M["errors"] = errs; M["video"] = str(pg.video.path())
     ctx.close(); marks[name] = M
     old = json.load(open(os.path.join(RAW, "marks.json"))) if os.path.exists(os.path.join(RAW, "marks.json")) else {}
     old[name] = M; json.dump(old, open(os.path.join(RAW, "marks.json"), "w"), indent=1, ensure_ascii=False)

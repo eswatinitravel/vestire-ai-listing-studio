@@ -7,9 +7,10 @@ HERE = os.path.dirname(os.path.abspath(__file__)); os.chdir(HERE)
 PROJ = os.path.dirname(HERE)
 B = "build"; OUT = "."; os.makedirs(B, exist_ok=True)
 W, H, FPS = 1920, 1080, 25
-FB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"; FR = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"; FM = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
-TEAL = (45, 212, 191); NAVY = (6, 26, 46); WHITE = (240, 248, 250); GREY = (160, 186, 196)
-LEAD, GAP, TAIL = 0.6, 0.35, 0.8
+FONTS = os.path.expanduser("~/.fonts")  # Geist + Gloock (OFL) converted from public/fonts, same faces as the app
+FB = f"{FONTS}/Geist-SemiBold.ttf"; FR = f"{FONTS}/Geist-Regular.ttf"; FD = f"{FONTS}/Gloock-Regular.ttf"; FM = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+TEAL = (94, 234, 212); NAVY = (10, 34, 54); WHITE = (236, 243, 247); GREY = (167, 188, 203)
+LEAD, GAP, TAIL = 0.5, 0.4, 0.6
 DUR = json.load(open("tts/durations.json"))
 FORCE = os.environ.get("FORCE", "").split(",")
 def ff(args, log):
@@ -46,7 +47,7 @@ PX, PY, PW, PH = 330, 70, 434, 940  # phone screen
 def phone_bg(name, kicker, title, sub):
     im = BG.copy(); d = ImageDraw.Draw(im)
     d.rounded_rectangle((PX - 22, PY - 22, PX + PW + 22, PY + PH + 22), 64, fill=(8, 12, 18), outline=(60, 80, 92), width=3)
-    text_block(d, 900, 210, [(kicker, font(FB, 30), TEAL, 18), (title, font(FB, 64), WHITE, 22), (sub, font(FR, 36), GREY, 0)], 900)
+    text_block(d, 900, 210, [(kicker, font(FB, 30), TEAL, 18), (title, font(FD, 66), WHITE, 22), (sub, font(FR, 36), GREY, 0)], 900)
     im.save(f"{B}/bg_{name}.png")
 def phone_frame():
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); m = Image.new("L", (W, H), 255); dm = ImageDraw.Draw(m)
@@ -60,7 +61,7 @@ def title_card():
     bg = shirt.resize((W, W)).crop((0, (W - H) // 2, W, (W + H) // 2)).filter(ImageFilter.GaussianBlur(28))
     bg = Image.blend(bg, Image.new("RGB", (W, H), NAVY), 0.72); d = ImageDraw.Draw(bg)
     sq = shirt.resize((720, 720)); bg.paste(sq, (1110, 150)); d.rectangle((1110, 150, 1830, 870), outline=TEAL, width=4)
-    text_block(d, 110, 220, [("VESTIRE AI LISTING STUDIO", font(FB, 30), TEAL, 26), ("Small sellers lose hours on every listing", font(FB, 72), WHITE, 30),
+    text_block(d, 110, 220, [("Vestire AI Listing Studio", font(FB, 34), TEAL, 26), ("Small sellers lose hours on every listing", font(FD, 78), WHITE, 30),
                              ("Photos · background removal · captions · sizes · prices — for every single item.", font(FR, 36), GREY, 0)], 900)
     bg.save(f"{B}/title.png")
 def zip_card(zpath):
@@ -73,18 +74,19 @@ def zip_card(zpath):
         d.text((PX + 34, y), ico + n, font=font(FM, 22), fill=TEAL if n.endswith(".csv") else WHITE); y += 44
     y += 20; d.text((PX + 34, y), "vestire-import.csv columns:", font=font(FB, 22), fill=GREY); y += 36
     for ln in textwrap.wrap(hdr.replace(",", ", "), 34): d.text((PX + 34, y), ln, font=font(FM, 19), fill=GREY); y += 28
-    text_block(d, 900, 210, [("STEP 5 · SHARE", font(FB, 30), TEAL, 18), ("WhatsApp · ZIP · CSV", font(FB, 64), WHITE, 22), ("Images, captions, listing.json and a CSV in the Vestire import format.", font(FR, 36), GREY, 0)], 900)
+    text_block(d, 900, 210, [("Step 5, share", font(FB, 32), TEAL, 18), ("WhatsApp, ZIP and CSV", font(FD, 66), WHITE, 22), ("Images, captions, listing.json and a CSV in the Vestire import format.", font(FR, 36), GREY, 0)], 900)
     im.save(f"{B}/zipcard.png")
 def end_card():
     im = BG.copy(); d = ImageDraw.Draw(im)
-    d.rounded_rectangle((W // 2 - 70, 170, W // 2 + 70, 310), 34, fill=(8, 59, 82))
+    d.rounded_rectangle((W // 2 - 70, 170, W // 2 + 70, 310), 34, fill=(26, 61, 88))
     d.line([(W // 2 - 34, 205), (W // 2, 275), (W // 2 + 34, 205)], fill=TEAL, width=16, joint="curve")
     def ctr(t, f, y, c):
         d.text(((W - d.textlength(t, font=f)) / 2, y), t, font=f, fill=c)
-    ctr("Vestire AI Listing Studio", font(FB, 80), 360, WHITE)
+    ctr("Vestire AI Listing Studio", font(FD, 88), 350, WHITE)
     ctr("One photo. A full listing.", font(FR, 40), 470, GREY)
     ctr("vestire-listing-studio.pages.dev", font(FB, 52), 570, TEAL)
-    ctr("Built with Meta Llama 4 Scout + Segment Anything", font(FB, 40), 670, WHITE)
+    ctr("Built with Meta Llama 4 Scout and Segment Anything", font(FB, 40), 670, WHITE)
+    ctr("Thank you for watching", font(FR, 34), 830, GREY)
     ctr("Open source · github.com/eswatinitravel/vestire-ai-listing-studio", font(FR, 28), 740, GREY)
     im.save(f"{B}/end.png")
 
@@ -143,8 +145,8 @@ def build_audio_and_subs():
     with open(f"{OUT}/vestire-listing-studio-demo.en.srt", "w") as f:
         for i, (a, b, p, _) in enumerate(events, 1): f.write(f"{i}\n{ts(a, ',')} --> {ts(min(b + 0.15, b), ',')}\n{p}\n\n")
     hdr = f"""[Script Info]\nScriptType: v4.00+\nPlayResX: {W}\nPlayResY: {H}\nWrapStyle: 0\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Wide,DejaVu Sans,46,&H00FFFFFF,&H00FFFFFF,&H40140C06,&H40140C06,-1,0,0,0,100,100,0,0,3,14,0,2,160,160,46,1
-Style: Side,DejaVu Sans,42,&H00FFFFFF,&H00FFFFFF,&H40140C06,&H40140C06,-1,0,0,0,100,100,0,0,3,14,0,2,900,80,120,1
+Style: Wide,Geist SemiBold,48,&H00FFFFFF,&H00FFFFFF,&H30362210,&H30362210,0,0,0,0,100,100,0,0,3,14,0,2,160,160,46,1
+Style: Side,Geist SemiBold,44,&H00FFFFFF,&H00FFFFFF,&H30362210,&H30362210,0,0,0,0,100,100,0,0,3,14,0,2,900,80,120,1
 \n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"""
     with open(f"{B}/captions.ass", "w") as f:
         f.write(hdr)
@@ -153,26 +155,29 @@ Style: Side,DejaVu Sans,42,&H00FFFFFF,&H00FFFFFF,&H40140C06,&H40140C06,-1,0,0,0,
 
 if __name__ == "__main__":
     phone_frame(); title_card(); end_card(); zip_card("raw/m390-pack.zip")
-    phone_bg("upload", "STEP 1 · ADD A PHOTO", "Any background · tap to guide", "Shot on the shop counter. Tap the garment so Segment Anything knows what to cut out.")
-    phone_bg("share", "STEP 5 · SHARE", "WhatsApp · ZIP · CSV", "One tap to WhatsApp, or download the full listing pack.")
-    phone_bg("draft", "STEP 6 · OPTIONAL", "Hidden draft · owner stays in control", "“Send to Vestire” is off by default. When enabled it creates the product as a hidden draft.")
+    phone_bg("upload", "Step 1, add a photo", "Any background, tap to guide", "Shot on the shop counter. Tap the garment so Segment Anything knows what to cut out.")
+    phone_bg("share", "Step 5, share", "WhatsApp, ZIP and CSV", "One tap to WhatsApp, or download the full listing pack.")
+    phone_bg("draft", "Step 6, optional", "A hidden draft, the owner stays in control", "“Send to Vestire” is off by default. When enabled it creates the product as a hidden draft.")
     only = sys.argv[1:]
+    MK = json.load(open("raw/marks.json")); D_, P_ = MK["desktop"], MK["m390"]
     still("01_problem", "problem", f"{B}/title.png")
-    desktop("02_intro", "intro", [("desktop.webm", 0.5, 8.0, 1)])
-    phone("03_upload", "upload", [("m390.webm", 11.5, 18.6, 1)], "upload")
-    # generate: tap (real time) -> frozen SAM part at 4x -> finished timers, slow zoom + highlight
-    Dg = need("generate"); z0 = 2.7 + 11 / 4 + 1.2; zn = int(z0 * FPS); zl = 2.5 * FPS
-    zvf = (f"zoompan=z='if(lt(on,{zn}),1,min(1.25,1+(on-{zn})*0.25/{zl}))':x='(zoom-1)/0.25*190':y=0:d=1:s={W}x{H}:fps={FPS},"
-           f"drawtext=fontfile={FB}:text='4x speed  ·  real run 16.1 s':x=60:y=60:fontsize=40:fontcolor=white:box=1:boxcolor=0x061a2e@0.85:boxborderw=18:enable='between(t,2.7,{2.7 + 11 / 4})',"
-           f"drawbox=x=1500:y=118:w=335:h=620:color=0x2dd4bf@0.95:t=7:enable='gte(t,{z0 + 2.8})',"
-           f"drawtext=fontfile={FB}:text='Live timers':x=1520:y=760:fontsize=40:fontcolor=0x2dd4bf:box=1:boxcolor=0x061a2e@0.85:boxborderw=12:enable='gte(t,{z0 + 2.8})'")
-    desktop("04_generate", "generate", [("desktop.webm", 16.8, 19.5, 1), ("desktop.webm", 19.5, 30.5, 4), ("desktop.webm", 30.5, 35.0, 1)], extra_vf=zvf)
-    desktop("05_gallery", "gallery", [("desktop.webm", 36.0, 41.0, 0.6)])
-    Df = need("form"); desktop("06_form", "form", [("desktop.webm", 41.0, 60.0, round(19.0 / (Df - 0.6), 3))])
-    Ds = need("share"); phone("07_share", "share", [("m390.webm", 66.3, 68.9, 1), ("m390-wa.webm", 0.0, 3.9, 1), ("m390.webm", 73.0, 75.8, 1)], "share", D=9.3)
+    # intro: the real app loading, "AI model ready" appears in the top bar
+    desktop("02_intro", "intro", [("desktop.webm", D_["loaded"] - 0.3, D_["model_ready"] + 1.2, 1)])
+    phone("03_upload", "upload", [("m390.webm", P_["uploaded"] - 1.4, P_["hint_typed"] + 0.6, 1)], "upload")
+    # generate: tap + seller note, then the REAL pipeline in real time (no speed-up), then a slow zoom on the finished timers
+    g0 = D_["hint_typed"] - 1.0; g1 = D_["pipe_hold_start"]; real = g1 - g0; Dg = need("generate")
+    zs = max(real, Dg - 3.2); zn = int(zs * FPS); zl = 2.2 * FPS
+    zvf = (f"zoompan=z='if(lt(on,{zn}),1,min(1.3,1+(on-{zn})*0.3/{zl}))':x='(zoom-1)/0.3*(iw-iw/1.3)':y='(zoom-1)/0.3*(ih-ih/1.3)*0.55':d=1:s={W}x{H}:fps={FPS},"
+           f"drawtext=fontfile={FB}:text='Real time, no speed-up':x=60:y=40:fontsize=36:fontcolor=white:box=1:boxcolor=0x0a2236@0.9:boxborderw=16:enable='between(t,{D_['generate'] - g0},{real})',"
+           f"drawtext=fontfile={FB}:text='Live run, {D_['total'].split()[1].rstrip(',')} total':x=60:y=40:fontsize=40:fontcolor=0x5eead4:box=1:boxcolor=0x0a2236@0.92:boxborderw=18:enable='gte(t,{real})'")
+    desktop("04_generate", "generate", [("desktop.webm", g0, g1, 1)], extra_vf=zvf)
+    desktop("05_gallery", "gallery", [("desktop.webm", D_["gallery"] - 2.4, D_["variant_shown"] + 1.0, 0.62)])
+    Df = need("form"); f0, f1 = D_["variant_shown"] + 1.0, D_["price"] + 0.3
+    desktop("06_form", "form", [("desktop.webm", f0, f1, round((f1 - f0) / (Df - 0.6), 3))])
+    Ds = need("share"); phone("07_share", "share", [("m390.webm", P_["price"] - 0.6, P_["wa_click"] + 0.3, 1), ("m390-wa.webm", 0.0, 3.9, 1), ("m390.webm", P_["wa_popup_end"] + 0.2, P_["zip_click"] + 2.0, 1)], "share", D=9.3)
     plain_still("07b_zip", f"{B}/zipcard.png", round(max(Ds - 9.3, 3.5), 2), "Side")
-    phone("08_draft", "draft", [("m390.webm", 76.3, 82.3, 0.7)], "draft")
-    still("09_end", "end", f"{B}/end.png", zoom_to=1.03, tail=1.6)
+    phone("08_draft", "draft", [("m390.webm", P_["zip_click"] + 3.6, P_["end"], 0.75)], "draft")
+    still("09_end", "end", f"{B}/end.png", zoom_to=1.03, tail=1.0)
     json.dump(SEGS, open(f"{B}/segs.json", "w"), indent=1)
     print(SEGS); total, ev = build_audio_and_subs(); print("total", total, "captions", len(ev))
     open(f"{B}/list.txt", "w").write("".join(f"file 'seg_{n}.mp4'\n" for n, *_ in SEGS))

@@ -1,23 +1,44 @@
-# Demo video script — English only (final cut 2:09)
+# Vestire AI Listing Studio — demo video script (English)
 
-Recorded from the **live** site https://vestire-listing-studio.pages.dev with Playwright (headless Chromium): a 390×844 phone viewport shown in a phone frame, plus 1280×720 desktop shots scaled to 1920×1080. The real pipeline ran on camera (SlimSAM in the browser + Meta Llama 4 Scout on Workers AI + FLUX.1 schnell background). Voice-over: Piper TTS (MIT), voice `en_US-ljspeech-high` (LJ Speech dataset, public domain). All narration and captions are English. Captions are burned in and also provided as `vestire-listing-studio-demo.en.srt`.
+Voice: Piper `en_US-kristin-medium` (trained from scratch on public-domain LibriVox audio), length_scale 1.1, noise_scale 0.6. Captions burned in (Geist). Footage: real recordings of https://vestire-listing-studio.pages.dev, pipeline shown in real time.
 
-Honesty rules: only features that work on the live site are shown. Send to Vestire is shown only as its off-by-default setting; no store is touched.
+## problem
+- Hello, and thank you for joining us.
+- In bazaars all over Pakistan, small clothing sellers have wonderful stock.
+- But putting even one shirt online means photos, background removal, captions, sizes and prices, for every single item.
 
-| # | Time | Beat | Shot | Voice-over (English) | On-screen text |
-|---|---|---|---|---|---|
-| 1 | 0:00–0:16 | Problem | Title card: the shirt on a cluttered shop counter, slow zoom. | "In every bazaar in Pakistan, small clothing sellers have good stock. But getting one shirt online means photos, background removal, captions, sizes and prices. Hours of work, for every single item." | Small sellers lose hours on every listing |
-| 2 | 0:16–0:23 | App intro | Desktop: the live app, badge "LIVE · OPEN WEIGHTS". | "This is Vestire AI Listing Studio. One photo. A full listing." | One photo. A full listing. (spoken) |
-| 3 | 0:23–0:32 | Upload + tap | Phone (390 px) in a phone frame: upload the counter photo, "Shirt" chip, tap the shirt (teal dot). | "The seller adds one photo, straight from the shop counter. No need to clean the background. Just tap the garment." | Any background · tap to guide |
-| 4 | 0:32–0:54 | Generate + pipeline timers | Desktop: tap Generate; the part where the page is busy running SlimSAM is shown at 4× with a label ("real run 16.1 s"); then a slow zoom onto the finished pipeline card and a highlight box on the live timers. | "Tap Generate. Meta's Segment Anything model, in its compressed SlimSAM version, cuts the garment out right inside the browser. At the same time, Meta Llama 4 Scout, an open-weights model, looks at the photo and writes the listing. On this live run, the whole pipeline finished in under twenty seconds." | 4x speed · real run 16.1 s / Live timers |
-| 5 | 0:54–1:08 | Gallery | Desktop: original, cut-out, studio, flat-lay; type "maroon", tap Colour variant (slowed to 0.6×). | "Back comes a clean cut-out, a white studio shot, and a flat-lay scene. All of them use the seller's real garment, not an AI copy. Type a colour, and you get a colour preview too." | — |
-| 6 | 1:08–1:29 | Editable form, honest | Desktop: type "Original" into the title, warning appears, delete it; scroll descriptions (EN + Roman Urdu), caption, hashtags, size chart, price suggestion. | "Everything is editable. If a risky claim like "original" slips into the title, the app flags it before anything is published. Descriptions in English and Roman Urdu, captions, hashtags, and a size chart are all ready to edit. And the price is only a suggestion. The seller decides." | App's own warning: "Check before publishing" |
-| 7 | 1:29–1:42 | WhatsApp + ZIP | Phone: tap WhatsApp (the WhatsApp share page opens with the message), tap Download listing pack (toast), then a card with the real file list of the downloaded ZIP and the CSV columns. | "Share it to WhatsApp in one tap, or download the full listing pack. Images, captions, listing data, and a CSV file, ready for the store's import." | WhatsApp · ZIP · CSV |
-| 8 | 1:42–1:56 | Hidden draft | Phone: Settings, "Send to Vestire" switch (off by default) toggled on and off; nothing is sent. | "For Vestire stores, there is also an optional Send to Vestire setting. It is off by default, and it creates the product as a hidden draft, so the owner checks it before it goes live." | Hidden draft · owner stays in control |
-| 9 | 1:56–2:09 | End card | URL + credits. | "Hours of work, in about a minute. Free to use. Vestire AI Listing Studio. Built with Meta Llama 4 Scout and Segment Anything." | vestire-listing-studio.pages.dev · Built with Meta Llama 4 Scout + Segment Anything |
+## intro
+- So we built Vestire AI Listing Studio.
+- One photo, and a complete listing.
 
-**Notes**
-- TTS pronunciation hints (spoken text only; captions keep the real spelling): Vestire → "Vesteeray", SlimSAM → "Slim Sam", CSV → "C S V".
-- The SlimSAM timer (~13 s) includes the one-time model download (~14 MB). While SlimSAM runs, the page does not repaint (inference runs on the main thread), so live ticking timers can't be filmed; that stretch is sped up 4× and labelled, and the finished real timers are shown.
-- In the recording the Hugging Face model files were fetched server-side by the test harness, because the sandbox proxy blocks the browser's direct Hugging Face requests. Model and pipeline are the real ones; real users load the files straight from Hugging Face.
-- Rebuild: `python3 video/record.py both` (needs the chromium libs on LD_LIBRARY_PATH), `python3 video/tts.py`, `python3 video/build.py`.
+## upload
+- Let me show you. The seller adds a single photo, straight from the shop counter.
+- There is no need to clean the background. Simply tap the garment.
+
+## generate
+- Now, we press Generate, and you can watch every step in real time.
+- Meta's Segment Anything model, in its compact SlimSAM version, runs in a background worker in the browser, so the page stays smooth.
+- At the same moment, Meta Llama 4 Scout, an open-weights model, looks at the photo and writes the listing.
+
+## gallery
+- And here are the results. A clean cut-out, a white studio shot, and a flat-lay scene.
+- Every image uses the seller's real garment, never an AI copy.
+- If you type a colour, you also get a gentle colour preview.
+
+## form
+- Everything can be edited.
+- If a risky word like "original" slips into the title, the studio kindly flags it.
+- Descriptions in English and Roman Urdu, captions, hashtags and a size chart are all ready for you.
+- And the price is only a suggestion. The seller always decides.
+
+## share
+- You can share to WhatsApp with one tap, or download the complete listing pack.
+- Images, captions, listing data and a CSV file, ready for the store's import.
+
+## draft
+- For Vestire stores, there is also an optional Send to Vestire setting.
+- It is off by default, and only creates a hidden draft, so the owner checks it first.
+
+## end
+- Hours of work, done in about a minute, and free to use.
+- Vestire AI Listing Studio, built with Meta Llama 4 Scout and Segment Anything. Thank you so much for watching.

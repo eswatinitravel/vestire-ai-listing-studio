@@ -157,7 +157,7 @@ function drawGallery() {
       const m = document.createElement("span"); m.textContent = s.error; e.append(m); sp.textContent = s.label; cap.append(sp); f.append(e, cap); g.append(f); continue;
     }
     f.className = "shot" + (s.check ? " check" : "");
-    const img = document.createElement("img"); img.src = s.src; img.alt = s.label; img.loading = "lazy";
+    const img = document.createElement("img"); img.src = s.src; img.alt = s.label; img.decoding = "async";
     sp.textContent = s.label;
     const a = document.createElement("a"); a.href = s.src; a.download = s.name; a.innerHTML = ico("download"); a.setAttribute("aria-label", "Download " + s.label); a.title = "Download";
     cap.append(sp, a); f.append(img, cap); g.append(f);
@@ -334,6 +334,7 @@ async function variant() {
       src = jpg(composeOn(c, { bg: "#ffffff", scale: 0.8 })); label = `${colour.replace(/^./, (m) => m.toUpperCase())} preview`;
     }
     setShot(key, label, src, name);
+    const g = $("#gallery"); g.scrollTo({ left: g.scrollWidth, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     if (S.listing && !S.listing.colours.some((c) => c.toLowerCase() === colour.toLowerCase())) { S.listing.colours.push(colour.replace(/\b\w/g, (m) => m.toUpperCase())); fillForm(); }
   } catch (e) { setShot(key, `Variant: ${colour}`, "", name, { error: e.message.slice(0, 60) }); toast(e.message, 4000); }
   finally { S.busy = false; $("#variantBtn").disabled = false; $("#variantBtn").setAttribute("aria-busy", "false"); }
